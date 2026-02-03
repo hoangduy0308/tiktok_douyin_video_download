@@ -21,13 +21,16 @@
     "service_worker": "src/background/service-worker.js",
     "type": "module"
   },
-  "permissions": ["activeTab", "downloads", "storage"],
+  "permissions": ["activeTab", "downloads", "storage", "scripting"],
   "host_permissions": [
     "https://www.tiktok.com/*",
     "https://www.douyin.com/*",
     "https://vt.tiktok.com/*",
     "https://vm.tiktok.com/*",
-    "https://v.douyin.com/*"
+    "https://v.douyin.com/*",
+    "https://www.iesdouyin.com/*",
+    "https://*.douyinvod.com/*",
+    "https://*.bytedance.com/*"
   ],
   "content_scripts": [
     {

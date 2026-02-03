@@ -81,6 +81,59 @@ async function getActiveTab() {
   return tabs[0] || null;
 }
 
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function sendMessageWithRetry(tabId, message, retries = 3, delayMs = 300) {
+  let lastError = null;
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      return await chrome.tabs.sendMessage(tabId, message);
+    } catch (error) {
+      lastError = error;
+      const messageText = error?.message || "";
+      const isMissing = messageText.includes("Receiving end does not exist");
+      if (!isMissing || attempt === retries) break;
+      await wait(delayMs);
+    }
+  }
+  throw lastError;
+}
+
+async function injectContentScripts(tabId) {
+  try {
+    const results = await chrome.scripting.executeScript({
+      target: { tabId },
+      func: () => window.__DOUYIN_CONTENT_SCRIPT_INJECTED__
+    });
+    if (results?.[0]?.result) {
+      return true;
+    }
+
+    const files = [
+      "src/content/extractors/tiktok.js",
+      "src/content/extractors/douyin.js",
+      "src/content/content.js"
+    ];
+
+    for (const file of files) {
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId },
+          files: [file]
+        });
+      } catch (fileErr) {
+        console.warn(`Failed to inject ${file}:`, fileErr?.message);
+      }
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function requestVideoInfo() {
   setState("loading");
   const tab = await getActiveTab();
@@ -92,7 +145,16 @@ async function requestVideoInfo() {
 
   const message = createMessage("GET_VIDEO_INFO", { preferNoWatermark: true }, crypto.randomUUID());
   try {
-    const response = await chrome.tabs.sendMessage(tab.id, message);
+    let response = await sendMessageWithRetry(tab.id, message, 2, 300);
+    
+    if (!response) {
+      const injected = await injectContentScripts(tab.id);
+      if (injected) {
+        await wait(500);
+        response = await sendMessageWithRetry(tab.id, message, 2, 300);
+      }
+    }
+    
     if (response?.ok) {
       renderVideo(
         response.payload.video,
@@ -111,7 +173,42 @@ async function requestVideoInfo() {
       }
     }
   } catch (error) {
-    showError(makeError("PARSE_ERROR", error?.message));
+    const text = error?.message || "";
+    if (text.includes("Receiving end does not exist")) {
+      const injected = await injectContentScripts(tab.id);
+      if (injected) {
+        await wait(500);
+        try {
+          const response = await sendMessageWithRetry(tab.id, message, 2, 300);
+          if (response?.ok) {
+            renderVideo(
+              response.payload.video,
+              response.payload.platform,
+              response.payload.source,
+              response.payload.pageUrl
+            );
+            setState("success");
+            return;
+          } else {
+            const code = response?.error?.code;
+            if (code === "NOT_VIDEO_PAGE") {
+              setState("empty");
+              return;
+            }
+            showError(response?.error || makeError("PARSE_ERROR"));
+            setState("error");
+            return;
+          }
+        } catch {
+          showError(makeError("CONTENT_SCRIPT_MISSING", "Khong the ket noi. Hay tai lai trang."));
+          setState("error");
+          return;
+        }
+      }
+      showError(makeError("CONTENT_SCRIPT_MISSING"));
+    } else {
+      showError(makeError("PARSE_ERROR", text));
+    }
     setState("error");
   }
 }
@@ -381,6 +478,38 @@ document.getElementById("btn-clear").addEventListener("click", async () => {
 document.getElementById("btn-clear-history").addEventListener("click", async () => {
   await clearDownloads();
   showToast("Da xoa lich su");
+});
+
+document.getElementById("btn-clipboard-download").addEventListener("click", async () => {
+  const inputEl = document.getElementById("clipboard-input");
+  const clipboardText = inputEl.value.trim();
+  if (!clipboardText) {
+    showToast("Vui long dan link Douyin");
+    return;
+  }
+
+  const btn = document.getElementById("btn-clipboard-download");
+  btn.disabled = true;
+  btn.textContent = "Dang tai...";
+
+  try {
+    const response = await chrome.runtime.sendMessage(
+      createMessage("CLIPBOARD_DOWNLOAD", { clipboardText }, crypto.randomUUID())
+    );
+
+    if (response?.ok) {
+      showToast("Dang tai video...");
+      inputEl.value = "";
+    } else {
+      const errMsg = response?.error?.message || "Khong the tai video";
+      showToast(errMsg);
+    }
+  } catch (err) {
+    showToast(err?.message || "Co loi xay ra");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Tai tu link";
+  }
 });
 
 (async () => {

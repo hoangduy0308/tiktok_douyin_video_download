@@ -2,11 +2,26 @@
 
 ## Tóm tắt
 - Xây dựng extension MV3 cho Chrome/Edge với popup chính.
-- Phát hiện video TikTok/Douyin trên tab hiện tại.
+- **Tính năng chính (mới)**: Dán link từ clipboard → tự động extract URL Douyin → download video.
+- Phát hiện video TikTok/Douyin trên tab hiện tại (tính năng phụ).
 - Trích xuất URL video không watermark chất lượng cao từ JSON nhúng trong trang.
 - Tải xuống qua `chrome.downloads` với fallback download trong page context.
 - Lưu lịch sử tải trong `chrome.storage.local` và hiển thị trong popup.
 - Hiển thị disclaimer sử dụng cho mục đích cá nhân.
+
+## Luồng chính (MỚI) - Download từ Clipboard
+
+### Flow: Paste link → Download
+1. User copy link video từ Douyin app (dạng: `0.51 v@S.yt ... https://v.douyin.com/xxx/ ...`)
+2. Mở popup → Paste vào textarea hoặc bấm "Dán từ clipboard"
+3. Bấm "Tải video từ link"
+4. Background service worker:
+   - Extract URL từ text (regex `https://v.douyin.com/...`)
+   - Resolve redirect để lấy URL dài (`www.douyin.com/video/xxx`)
+   - Fetch HTML và parse `RENDER_DATA` JSON
+   - Tìm `video.play_addr.url_list[]` để lấy video URL thực
+   - Download trực tiếp bằng `chrome.downloads.download()`
+5. **Không cần mở tab/truy cập trang video**
 
 ## Phạm vi & mục tiêu thành công
 - Hoạt động ổn định trên trang video công khai TikTok và Douyin.

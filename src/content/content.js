@@ -1,4 +1,7 @@
 (function () {
+  if (window.__DOUYIN_CONTENT_SCRIPT_INJECTED__) return;
+  window.__DOUYIN_CONTENT_SCRIPT_INJECTED__ = true;
+
   const SHORT_HOSTS = new Set(["vt.tiktok.com", "vm.tiktok.com", "v.douyin.com"]);
 
   function isShortUrl(hostname) {

@@ -9,7 +9,8 @@ export const ERROR_CODES = {
   INTERRUPTED: "INTERRUPTED",
   TOKEN_EXPIRED: "TOKEN_EXPIRED",
   FORMAT_UNSUPPORTED: "FORMAT_UNSUPPORTED",
-  SHORT_URL_REDIRECTING: "SHORT_URL_REDIRECTING"
+  SHORT_URL_REDIRECTING: "SHORT_URL_REDIRECTING",
+  CONTENT_SCRIPT_MISSING: "CONTENT_SCRIPT_MISSING"
 };
 
 const DEFAULT_MESSAGES = {
@@ -23,7 +24,8 @@ const DEFAULT_MESSAGES = {
   INTERRUPTED: "Tai bi gian doan. Kiem tra mang hoac quyen tai xuong.",
   TOKEN_EXPIRED: "Link het han. Bam lay lai link.",
   FORMAT_UNSUPPORTED: "Video dang stream, chua ho tro.",
-  SHORT_URL_REDIRECTING: "Dang chuyen huong. Vui long doi redirect xong."
+  SHORT_URL_REDIRECTING: "Dang chuyen huong. Vui long doi redirect xong.",
+  CONTENT_SCRIPT_MISSING: "Noi dung chua san sang. Hay tai lai trang va thu lai."
 };
 
 export function makeError(code, message) {

@@ -1,5 +1,5 @@
 import { ERROR_CODES, makeError } from "../utils/errors.js";
-import { sanitizeFilename } from "../utils/filename.js";
+import { sanitizeFilename, buildFilename, getExtensionFromUrl } from "../utils/filename.js";
 import {
   upsertRecord,
   updateRecordById,
@@ -8,6 +8,7 @@ import {
 } from "../utils/storage.js";
 import { createResult } from "../utils/messages.js";
 import { armFallbackMatcher, initDownloadTracker } from "./download-tracker.js";
+import { processDouyinClipboard } from "../utils/douyin-extractor.js";
 
 initDownloadTracker();
 
@@ -89,8 +90,79 @@ async function handleDownload(message) {
   }
 }
 
+async function handleClipboardDownload(message) {
+  const { payload, requestId } = message;
+  const clipboardText = payload.clipboardText;
+
+  try {
+    const videoInfo = await processDouyinClipboard(clipboardText);
+    const filename = buildFilename({
+      author: videoInfo.author || videoInfo.authorId,
+      id: videoInfo.id,
+      ext: getExtensionFromUrl(videoInfo.bestUrl)
+    });
+
+    const safeFilename = sanitizeFilename(filename);
+    const now = Date.now();
+
+    await upsertRecord({
+      recordId: requestId,
+      id: videoInfo.id,
+      platform: "douyin",
+      title: videoInfo.title,
+      author: videoInfo.author,
+      url: videoInfo.bestUrl,
+      filename: safeFilename,
+      time: now,
+      status: "pending",
+      method: "downloads_api"
+    });
+
+    const downloadId = await downloadsDownload({
+      url: videoInfo.bestUrl,
+      filename: safeFilename,
+      saveAs: false
+    });
+
+    await updateRecordById(requestId, {
+      downloadId,
+      status: "in_progress",
+      filename: safeFilename,
+      method: "downloads_api"
+    });
+
+    return createResult("CLIPBOARD_DOWNLOAD_RESULT", requestId, true, {
+      downloadId,
+      video: videoInfo
+    });
+  } catch (err) {
+    const messageText = err?.message || "DOWNLOAD_FAILED";
+    let code = ERROR_CODES.PARSE_ERROR;
+    
+    if (messageText.includes("403")) {
+      code = ERROR_CODES.DOWNLOAD_403;
+    } else if (messageText.includes("FORMAT_UNSUPPORTED")) {
+      code = ERROR_CODES.FORMAT_UNSUPPORTED;
+    }
+
+    await updateRecordById(requestId, {
+      status: "interrupted",
+      lastError: makeError(code, messageText)
+    }).catch(() => {});
+
+    return createResult(
+      "CLIPBOARD_DOWNLOAD_RESULT",
+      requestId,
+      false,
+      null,
+      makeError(code, messageText)
+    );
+  }
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message || message.version !== 1) return;
+
   if (message.type === "DOWNLOAD_VIDEO") {
     handleDownload(message)
       .then((result) => sendResponse(result))
@@ -102,6 +174,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             false,
             null,
             makeError(ERROR_CODES.INTERRUPTED, error?.message)
+          )
+        )
+      );
+    return true;
+  }
+
+  if (message.type === "CLIPBOARD_DOWNLOAD") {
+    handleClipboardDownload(message)
+      .then((result) => sendResponse(result))
+      .catch((error) =>
+        sendResponse(
+          createResult(
+            "CLIPBOARD_DOWNLOAD_RESULT",
+            message.requestId,
+            false,
+            null,
+            makeError(ERROR_CODES.PARSE_ERROR, error?.message)
           )
         )
       );

@@ -3,6 +3,7 @@
   "name": "TikTok/Douyin Downloader",
   "version": "1.0.0",
   "description": "Tai video TikTok/Douyin khong watermark",
+  "default_locale": "vi",
   "action": {
     "default_title": "Tai TikTok/Douyin",
     "default_popup": "src/popup/popup.html",

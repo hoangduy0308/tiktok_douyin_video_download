@@ -22,6 +22,22 @@ const copyBtn = document.getElementById("btn-copy");
 const progressEl = document.getElementById("download-progress");
 const historyListEl = document.getElementById("history-list");
 const toastEl = document.getElementById("toast");
+const clipboardInput = document.getElementById("clipboard-input");
+
+function localizeUI() {
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    el.textContent = chrome.i18n.getMessage(el.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+    el.title = chrome.i18n.getMessage(el.dataset.i18nTitle);
+    el.setAttribute("aria-label", el.title);
+  });
+  if (clipboardInput) {
+    clipboardInput.placeholder = chrome.i18n.getMessage("paste_link_placeholder");
+  }
+}
+
+localizeUI();
 
 let currentVideo = null;
 let currentTabId = null;
@@ -43,36 +59,38 @@ function formatTimeAgo(time) {
   if (!time) return "";
   const diff = Math.max(0, Date.now() - time);
   const seconds = Math.floor(diff / 1000);
-  if (seconds < 60) return `${seconds}s truoc`;
+  if (seconds < 60) return chrome.i18n.getMessage("time_seconds_ago", [seconds]);
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}p truoc`;
+  if (minutes < 60) return chrome.i18n.getMessage("time_minutes_ago", [minutes]);
   const hours = Math.floor(minutes / 60);
-  return `${hours}h truoc`;
+  return chrome.i18n.getMessage("time_hours_ago", [hours]);
 }
 
 function updateMeta(source, platform) {
   if (!source) {
-    metaEl.textContent = "Dang phat hien video...";
+    metaEl.textContent = chrome.i18n.getMessage("detecting_video");
     return;
   }
   const timeText = formatTimeAgo(source.extractedAt);
   const platformText = platform === "tiktok" ? "TikTok" : "Douyin";
-  metaEl.textContent = `Da trich xuat: ${timeText} ? ${platformText}`;
+  metaEl.textContent = chrome.i18n.getMessage("extracted_info", [timeText, platformText]);
 }
 
 function renderVideo(video, platform, source, pageUrl) {
   currentVideo = { ...video, platform, pageUrl };
   videoThumbEl.src = video.thumbnailUrl || "";
-  videoTitleEl.textContent = video.title || "(Khong co tieu de)";
+  videoTitleEl.textContent = video.title || chrome.i18n.getMessage("no_title");
   videoAuthorEl.textContent = video.author ? `@${video.author}` : "";
-  const watermarkText = video.noWatermarkUrl ? "Khong watermark" : "Co the co watermark";
-  videoMetaEl.textContent = `${video.format.toUpperCase()} ? ${watermarkText}`;
+  const watermarkText = video.noWatermarkUrl
+    ? chrome.i18n.getMessage("no_watermark")
+    : chrome.i18n.getMessage("may_have_watermark");
+  videoMetaEl.textContent = `${video.format.toUpperCase()} · ${watermarkText}`;
   updateMeta(source, platform);
   updateDownloadProgress();
 }
 
 function showError(error) {
-  errorMessageEl.textContent = error?.message || "Co loi xay ra";
+  errorMessageEl.textContent = error?.message || chrome.i18n.getMessage("error_occurred");
   errorCodeEl.textContent = error?.code || "UNKNOWN";
 }
 
@@ -200,7 +218,7 @@ async function requestVideoInfo() {
             return;
           }
         } catch {
-          showError(makeError("CONTENT_SCRIPT_MISSING", "Khong the ket noi. Hay tai lai trang."));
+          showError(makeError("CONTENT_SCRIPT_MISSING", "Không thể kết nối. Hãy tải lại trang."));
           setState("error");
           return;
         }
@@ -282,11 +300,11 @@ async function startDownload(fromRecord) {
   );
 
   if (response?.ok) {
-    showToast("Dang tai video...");
+    showToast("Đang tải video...");
   } else if (response?.error?.code === "DOWNLOAD_403") {
-    showToast("Dang thu che do tuong thich...");
+    showToast("Đang thử chế độ tương thích...");
   } else if (response?.error) {
-    showToast("Tai that bai");
+    showToast("Tải thất bại");
   }
 }
 
@@ -301,13 +319,13 @@ function updateDownloadProgress() {
   }
   if (record.status === "in_progress") {
     const percent = record.progress && typeof record.progress.percent === "number" ? record.progress.percent : null;
-    progressEl.textContent = percent === null ? "Dang tai..." : `Dang tai... ${percent}%`;
+    progressEl.textContent = percent === null ? "Đang tải..." : `Đang tải... ${percent}%`;
     progressEl.classList.remove("hidden");
   } else if (record.status === "complete") {
-    progressEl.textContent = "Tai xong";
+    progressEl.textContent = "Tải xong";
     progressEl.classList.remove("hidden");
   } else if (record.status === "interrupted") {
-    progressEl.textContent = "Tai bi gian doan";
+    progressEl.textContent = "Tải bị gián đoạn";
     progressEl.classList.remove("hidden");
   } else {
     progressEl.classList.add("hidden");
@@ -318,13 +336,13 @@ function statusLabel(record) {
   if (record.method === "fallback_anchor") return "Fallback";
   switch (record.status) {
     case "complete":
-      return "Hoan tat";
+      return chrome.i18n.getMessage("status_complete");
     case "in_progress":
-      return "Dang tai";
+      return chrome.i18n.getMessage("status_in_progress");
     case "interrupted":
-      return "Bi gian doan";
+      return chrome.i18n.getMessage("status_interrupted");
     default:
-      return "Dang cho";
+      return chrome.i18n.getMessage("status_pending");
   }
 }
 
@@ -339,7 +357,7 @@ function renderHistory(list) {
   if (!list.length) {
     const empty = document.createElement("div");
     empty.className = "empty-text";
-    empty.textContent = "Chua co lich su tai.";
+    empty.textContent = "Chưa có lịch sử tải.";
     historyListEl.appendChild(empty);
     return;
   }
@@ -357,7 +375,7 @@ function renderHistory(list) {
 
     const title = document.createElement("div");
     title.className = "history-title";
-    title.textContent = record.title || record.id || "(Khong tieu de)";
+    title.textContent = record.title || record.id || "(Không tiêu đề)";
 
     const time = document.createElement("div");
     time.className = "history-time";
@@ -375,7 +393,7 @@ function renderHistory(list) {
 
     const btnOpen = document.createElement("button");
     btnOpen.className = "action-btn";
-    btnOpen.textContent = "Mo file";
+    btnOpen.textContent = "Mở file";
     btnOpen.addEventListener("click", async (event) => {
       event.stopPropagation();
       if (record.downloadId) {
@@ -385,7 +403,7 @@ function renderHistory(list) {
 
     const btnFolder = document.createElement("button");
     btnFolder.className = "action-btn";
-    btnFolder.textContent = "Mo thu muc";
+    btnFolder.textContent = "Mở thư mục";
     btnFolder.addEventListener("click", (event) => {
       event.stopPropagation();
       if (record.downloadId) {
@@ -395,7 +413,7 @@ function renderHistory(list) {
 
     const btnRetry = document.createElement("button");
     btnRetry.className = "action-btn";
-    btnRetry.textContent = "Tai lai";
+    btnRetry.textContent = "Tải lại";
     btnRetry.addEventListener("click", (event) => {
       event.stopPropagation();
       startDownload(record);
@@ -403,22 +421,22 @@ function renderHistory(list) {
 
     const btnDelete = document.createElement("button");
     btnDelete.className = "action-btn";
-    btnDelete.textContent = "Xoa";
+    btnDelete.textContent = "Xóa";
 
     let confirmDelete = false;
     btnDelete.addEventListener("click", async (event) => {
       event.stopPropagation();
       if (!confirmDelete) {
         confirmDelete = true;
-        btnDelete.textContent = "Xac nhan?";
+        btnDelete.textContent = "Xác nhận?";
         setTimeout(() => {
           confirmDelete = false;
-          btnDelete.textContent = "Xoa";
+          btnDelete.textContent = "Xóa";
         }, 2000);
         return;
       }
       await deleteRecord(record.recordId);
-      showToast("Da xoa khoi lich su");
+      showToast("Đã xóa khỏi lịch sử");
     });
 
     actions.appendChild(btnOpen);
@@ -456,41 +474,41 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 // Event bindings
 
-document.getElementById("btn-refresh").addEventListener("click", requestVideoInfo);
-document.getElementById("btn-retry").addEventListener("click", requestVideoInfo);
-document.getElementById("btn-download").addEventListener("click", () => startDownload());
+document.getElementById("btn-refresh")?.addEventListener("click", requestVideoInfo);
+document.getElementById("btn-retry")?.addEventListener("click", requestVideoInfo);
+document.getElementById("btn-download")?.addEventListener("click", () => startDownload());
 
-document.getElementById("btn-copy").addEventListener("click", async () => {
+document.getElementById("btn-copy")?.addEventListener("click", async () => {
   if (!currentVideo) return;
   try {
     await navigator.clipboard.writeText(getPreferredUrl(currentVideo));
-    showToast("Da sao chep link");
+    showToast("Đã sao chép link");
   } catch {
-    showToast("Khong the sao chep");
+    showToast("Không thể sao chép");
   }
 });
 
-document.getElementById("btn-clear").addEventListener("click", async () => {
+document.getElementById("btn-clear")?.addEventListener("click", async () => {
   await clearDownloads();
-  showToast("Da xoa lich su");
+  showToast("Đã xóa lịch sử");
 });
 
-document.getElementById("btn-clear-history").addEventListener("click", async () => {
+document.getElementById("btn-clear-history")?.addEventListener("click", async () => {
   await clearDownloads();
-  showToast("Da xoa lich su");
+  showToast("Đã xóa lịch sử");
 });
 
-document.getElementById("btn-clipboard-download").addEventListener("click", async () => {
+document.getElementById("btn-clipboard-download")?.addEventListener("click", async () => {
   const inputEl = document.getElementById("clipboard-input");
   const clipboardText = inputEl.value.trim();
   if (!clipboardText) {
-    showToast("Vui long dan link Douyin");
+    showToast("Vui lòng dán link Douyin");
     return;
   }
 
   const btn = document.getElementById("btn-clipboard-download");
   btn.disabled = true;
-  btn.textContent = "Dang tai...";
+  btn.textContent = "Đang tải...";
 
   try {
     const response = await chrome.runtime.sendMessage(
@@ -498,17 +516,17 @@ document.getElementById("btn-clipboard-download").addEventListener("click", asyn
     );
 
     if (response?.ok) {
-      showToast("Dang tai video...");
+      showToast("Đang tải video...");
       inputEl.value = "";
     } else {
-      const errMsg = response?.error?.message || "Khong the tai video";
+      const errMsg = response?.error?.message || "Không thể tải video";
       showToast(errMsg);
     }
   } catch (err) {
-    showToast(err?.message || "Co loi xay ra");
+    showToast(err?.message || "Có lỗi xảy ra");
   } finally {
     btn.disabled = false;
-    btn.textContent = "Tai tu link";
+    btn.textContent = "Tải từ link";
   }
 });
 

@@ -21,6 +21,9 @@ function makeDoc(textMap) {
     getElementById(id) {
       if (!Object.prototype.hasOwnProperty.call(textMap, id)) return null;
       return { textContent: textMap[id] };
+    },
+    querySelectorAll() {
+      return [];
     }
   };
 }

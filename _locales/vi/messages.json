@@ -1,0 +1,99 @@
+{
+  "app_title": {
+    "message": "Tải TikTok/Douyin"
+  },
+  "app_name": {
+    "message": "TikTok/Douyin"
+  },
+  "detecting_video": {
+    "message": "Đang phát hiện video..."
+  },
+  "refresh": {
+    "message": "Làm mới"
+  },
+  "clear_history": {
+    "message": "Xóa lịch sử"
+  },
+  "paste_link_placeholder": {
+    "message": "Dán link Douyin vào đây (vd: https://v.douyin.com/...)"
+  },
+  "download_from_link": {
+    "message": "Tải từ link"
+  },
+  "no_video_detected": {
+    "message": "Không phát hiện video."
+  },
+  "open_public_video": {
+    "message": "Hãy mở trang video TikTok/Douyin công khai."
+  },
+  "cannot_extract_video": {
+    "message": "Không thể trích xuất video"
+  },
+  "error_code": {
+    "message": "Mã lỗi:"
+  },
+  "retry": {
+    "message": "Thử lại"
+  },
+  "download_video": {
+    "message": "Tải video"
+  },
+  "copy_video_link": {
+    "message": "Sao chép link video"
+  },
+  "download_history": {
+    "message": "Lịch sử tải"
+  },
+  "disclaimer": {
+    "message": "Chỉ dùng cho mục đích cá nhân. Không hỗ trợ video private/paid."
+  },
+  "time_seconds_ago": {
+    "message": "$COUNT$ giây trước",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "time_minutes_ago": {
+    "message": "$COUNT$ phút trước",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "time_hours_ago": {
+    "message": "$COUNT$ giờ trước",
+    "placeholders": {
+      "count": { "content": "$1" }
+    }
+  },
+  "extracted_info": {
+    "message": "Đã trích xuất: $TIME$ · $PLATFORM$",
+    "placeholders": {
+      "time": { "content": "$1" },
+      "platform": { "content": "$2" }
+    }
+  },
+  "no_title": {
+    "message": "(Không có tiêu đề)"
+  },
+  "no_watermark": {
+    "message": "Không watermark"
+  },
+  "may_have_watermark": {
+    "message": "Có thể có watermark"
+  },
+  "error_occurred": {
+    "message": "Có lỗi xảy ra"
+  },
+  "status_complete": {
+    "message": "Hoàn tất"
+  },
+  "status_in_progress": {
+    "message": "Đang tải"
+  },
+  "status_interrupted": {
+    "message": "Gián đoạn"
+  },
+  "status_pending": {
+    "message": "Đang chờ"
+  }
+}

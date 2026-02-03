@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tai TikTok/Douyin</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <div class="header-left">
+          <img class="app-icon" src="../../assets/icons/icon48.png" alt="" />
+          <div>
+            <div class="app-title">Tai TikTok/Douyin</div>
+            <div class="app-subtitle" id="extracted-meta">Dang phat hien video...</div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button id="btn-refresh" class="icon-btn" aria-label="Lay lai link" title="Lay lai link">&#8635;</button>
+          <button id="btn-clear-history" class="icon-btn" aria-label="Xoa lich su" title="Xoa lich su">&#8942;</button>
+        </div>
+      </header>
+
+      <main class="app-main">
+        <section class="section video-section">
+          <div id="state-loading" class="state state-loading">
+            <div class="skeleton thumb"></div>
+            <div class="skeleton lines"></div>
+            <button class="btn primary" disabled>Dang phat hien video...</button>
+          </div>
+
+          <div id="state-empty" class="state state-empty hidden">
+            <div class="empty-icon">&#128249;</div>
+            <div class="empty-text">Khong phat hien video. Hay mo trang video TikTok/Douyin cong khai.</div>
+          </div>
+
+          <div id="state-error" class="state state-error hidden" role="alert">
+            <div class="error-title">Khong the trich xuat video</div>
+            <div id="error-message" class="error-message"></div>
+            <div class="error-code">Ma loi: <span id="error-code"></span></div>
+            <button id="btn-retry" class="btn ghost">Lay lai link</button>
+          </div>
+
+          <div id="state-success" class="state state-success hidden">
+            <div class="video-card">
+              <img id="video-thumb" class="video-thumb" alt="" />
+              <div class="video-info">
+                <div id="video-title" class="video-title"></div>
+                <div id="video-author" class="video-author"></div>
+                <div id="video-meta" class="video-meta"></div>
+              </div>
+            </div>
+            <button id="btn-download" class="btn primary">Tai video</button>
+            <div id="download-progress" class="download-progress hidden"></div>
+            <button id="btn-copy" class="btn link">Sao chep link</button>
+          </div>
+        </section>
+
+        <section class="section history-section">
+          <div class="section-header">
+            <div class="section-title">Lich su tai</div>
+            <button id="btn-clear" class="btn icon" aria-label="Xoa lich su">&#128465;</button>
+          </div>
+          <div id="history-list" class="history-list"></div>
+        </section>
+      </main>
+
+      <footer class="app-footer">
+        <div class="disclaimer">Chi dung cho muc dich ca nhan. Khong ho tro video private/paid.</div>
+      </footer>
+    </div>
+
+    <div id="toast" class="toast hidden" aria-live="polite"></div>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
